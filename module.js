@@ -1,7 +1,6 @@
-// Variable globale pour stocker l'instance du graphique (et pouvoir le détruire/recréer)
+// Variable globale pour le graphique Chart.js
 let roiChartInstance = null;
 
-// Attendre que le DOM soit chargé
 document.addEventListener('DOMContentLoaded', function() {
   const btnCalculate = document.querySelector('.btn-calculate');
   if (btnCalculate) {
@@ -9,70 +8,114 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// === FONCTION PRINCIPALE ===
-function calculerROI() {
-  console.log('--- Démarrage du calcul ---');
+// === GESTION DU SWITCH FINANCEMENT ===
+function toggleFinancement() {
+  const isLocation = document.getElementById('mode_location').checked;
+  const groupLoyer = document.getElementById('group_loyer');
+  
+  // Éléments UI à modifier
+  const labelInvest = document.getElementById('label_invest');
+  const helperInvest = document.getElementById('helper_invest');
+  const inputInvest = document.getElementById('investissement');
+  
+  const labelCouts = document.getElementById('label_couts');
+  const helperCouts = document.getElementById('helper_couts');
 
-  // 1. Récupération des valeurs (Fonction helper pour éviter les crashs)
+  if (isLocation) {
+    // Mode LOCATION RSE
+    groupLoyer.style.display = 'block'; 
+    
+    labelInvest.textContent = "Apport Initial (Facultatif)";
+    helperInvest.textContent = "Préservation de la trésorerie (généralement 0€)";
+    // On met 0 par défaut si c'était 3500
+    if (inputInvest.value == "3500") inputInvest.value = "0"; 
+
+    labelCouts.textContent = "Services hors-leasing (€)";
+    helperCouts.textContent = "Ex: Licence logicielle si non incluse dans le loyer";
+  } else {
+    // Mode ACHAT COMPTANT
+    groupLoyer.style.display = 'none'; 
+    
+    labelInvest.textContent = "Investissement initial (€)";
+    helperInvest.textContent = "Matériel + Installation + Logiciel";
+    // On remet 3500 par défaut si c'était 0
+    if (inputInvest.value == "0") inputInvest.value = "3500";
+
+    labelCouts.textContent = "Coûts mensuels récurrents (€)";
+    helperCouts.textContent = "Abonnement IDPLAY + Maintenance";
+  }
+}
+
+// === CALCUL PRINCIPAL ===
+function calculerROI() {
+  console.log('--- Calcul en cours ---');
+
+  // Helpers sécurisés
   const getVal = (id) => parseFloat(document.getElementById(id)?.value) || 0;
   
+  // 1. Inputs
   const trafic = getVal('trafic');
   const ventes = getVal('ventes');
   const panier = getVal('panier');
-  const investissement = getVal('investissement');
-  const coutsMensuels = getVal('couts_mensuels');
-
-  // Récupération sécurisée du taux de simulation (Défaut 33%)
+  
+  // Gestion intelligente de la simulation (Défaut 33%)
   let tauxHausseInput = 33;
   const elTaux = document.getElementById('taux_hausse_trafic');
-  if (elTaux) {
-    tauxHausseInput = parseFloat(elTaux.value) || 33;
+  if (elTaux) tauxHausseInput = parseFloat(elTaux.value) || 33;
+
+  // Gestion intelligente du Financement
+  let investissement = getVal('investissement');
+  let coutsMensuels = getVal('couts_mensuels');
+  
+  const isLocation = document.getElementById('mode_location')?.checked;
+  if (isLocation) {
+    const loyer = getVal('loyer_mensuel');
+    coutsMensuels = coutsMensuels + loyer; // Total Charges Mensuelles
+    // L'investissement reste l'apport (souvent 0)
   }
 
-  // Validation basique
+  // Validation
   if (trafic <= 0 || ventes <= 0 || panier <= 0) {
-    alert('Veuillez renseigner les champs Trafic, Ventes et Panier avec des valeurs positives.');
+    alert('Veuillez renseigner Trafic, Ventes et Panier avec des valeurs positives.');
     return;
   }
 
-  // === 2. LOGIQUE DE CALCUL ===
-  
-  // Situation AVANT (Actuel)
+  // 2. Logique Performance
   const tauxConversion = ventes / trafic;
-  const caAvant = ventes * panier; // CA Mensuel Avant
+  const caAvant = ventes * panier;
 
-  // Situation APRÈS (Projection)
   const multiplicateurTrafic = 1 + (tauxHausseInput / 100);
-  const traficApres = trafic * multiplicateurTrafic; 
+  const traficApres = trafic * multiplicateurTrafic;
   const ventesApres = traficApres * tauxConversion;
-  const panierApres = panier * 1.295; // Hypothèse fixe : +29.5% de panier
-  const caApres = ventesApres * panierApres; // CA Mensuel Après
-  
-  // Indicateurs Financiers
+  const panierApres = panier * 1.295; // Fixe +29.5%
+  const caApres = ventesApres * panierApres;
+
+  // 3. Logique Financière
   const gainMensuel = caApres - caAvant;
   const gainAnnuelCA = gainMensuel * 12;
   const coutInaction = gainMensuel * 6;
   const tresorerieNetteMensuelle = gainMensuel - coutsMensuels;
+  
   const coutsAnnuels = coutsMensuels * 12;
-  
-  // Bénéfice Net Année 1 (Gain CA 12 mois - Coûts 12 mois - Investissement départ)
   const beneficeNetAn1 = gainAnnuelCA - coutsAnnuels - investissement;
-  
-  // Pourcentage de hausse globale du CA (pour le badge)
   const pourcentHausseCA = ((caApres - caAvant) / caAvant) * 100;
 
-  // Calcul du ROI (%)
+  // Calcul ROI (Cas spécial Division par zéro)
   let roiAn1 = 0;
+  let roiText = "";
   if (investissement > 0) {
     roiAn1 = (beneficeNetAn1 / investissement) * 100;
+    roiText = formatPourcent(roiAn1);
+  } else {
+    // Si investissement 0 => ROI Infini
+    roiAn1 = 999999; 
+    roiText = "Infini";
   }
 
-  // === 3. AFFICHAGE DES RÉSULTATS ===
-  
-  // Helpers pour injecter le texte sans erreur
-  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-  
-  // Tableau Comparatif
+  // 4. Affichage DOM
+  const setText = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+
+  // Comparatif
   setText('trafic_avant', formatNumber(trafic) + ' visit.');
   setText('ventes_avant', formatNumber(ventes) + ' ventes');
   setText('panier_avant', formatEuro(panier));
@@ -83,100 +126,74 @@ function calculerROI() {
   setText('panier_apres', formatEuro(panierApres));
   setText('ca_apres', formatEuro(caApres));
 
-  // Mise à jour des badges dynamiques
-  const txtBadgeTrafic = '+' + tauxHausseInput + '%';
-  const txtBadgeCA = '+' + pourcentHausseCA.toFixed(1) + '%';
-  setText('badge_trafic', txtBadgeTrafic);
-  setText('badge_ventes', txtBadgeTrafic);
-  setText('badge_ca', txtBadgeCA);
+  // Badges
+  setText('badge_trafic', '+' + tauxHausseInput + '%');
+  setText('badge_ventes', '+' + tauxHausseInput + '%');
+  setText('badge_ca', '+' + pourcentHausseCA.toFixed(1) + '%');
 
-  // Cartes Financières (ROI, Benefice, etc.)
+  // Bannières Gain & Tréso
+  setText('gain_mensuel', formatEuro(gainMensuel));
+  setText('gain_annuel', formatEuro(gainAnnuelCA));
+  
+  const elTreso = document.getElementById('tresorerie_nette');
+  if (elTreso) {
+    elTreso.textContent = (tresorerieNetteMensuelle > 0 ? '+' : '') + formatEuro(tresorerieNetteMensuelle) + ' /mois';
+    elTreso.style.color = tresorerieNetteMensuelle >= 0 ? '#00BDA5' : '#DE0B19';
+  }
+
+  // Cartes Finance
   setText('res_invest', formatEuro(investissement));
   setText('res_ca_1an', formatEuro(gainAnnuelCA));
   
-  // Bénéfice (avec couleur)
-  const elBenefice = document.getElementById('res_benefice');
-  if (elBenefice) {
-    const signe = beneficeNetAn1 > 0 ? '+' : '';
-    elBenefice.textContent = signe + formatEuro(beneficeNetAn1);
-    elBenefice.style.color = beneficeNetAn1 >= 0 ? '#DE0B19' : '#1A1A1A'; 
-  }
-  
-  // ROI (avec couleur)
-  const elROI = document.getElementById('res_roi');
-  if (elROI) {
-    elROI.textContent = formatPourcent(roiAn1);
-    elROI.style.color = roiAn1 >= 0 ? '#DE0B19' : '#1A1A1A';
+  const elBenef = document.getElementById('res_benefice');
+  if(elBenef) {
+    elBenef.textContent = (beneficeNetAn1 > 0 ? '+' : '') + formatEuro(beneficeNetAn1);
+    elBenef.style.color = beneficeNetAn1 >= 0 ? '#DE0B19' : '#1A1A1A';
   }
 
-  // Bannières & Alertes
-  setText('gain_mensuel', formatEuro(gainMensuel));
-  setText('gain_annuel', formatEuro(gainAnnuelCA));
+  const elRoi = document.getElementById('res_roi');
+  if(elRoi) {
+    elRoi.textContent = roiText;
+    elRoi.style.color = '#DE0B19';
+  }
+
   setText('cout_inaction', formatEuro(coutInaction));
 
-  // === 4. GÉNÉRATION DU GRAPHIQUE (Chart.js) ===
-  // On passe les CA mensuels, la fonction s'occupe de projeter sur 3 ans
+  // 5. Graphique & Affichage Final
   updateChart(caAvant, caApres);
-
-  // === 5. FINALISATION ===
+  
   const resultsSection = document.getElementById('results');
   if (resultsSection) {
     resultsSection.style.display = 'block';
-    // Petit délai pour laisser le temps au graphique de s'initialiser avant de scroller
-    setTimeout(() => {
-      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
+    setTimeout(() => resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
   }
 
-  // Tracking HubSpot
-  if (typeof window._hsq !== 'undefined') {
-    window._hsq.push(['trackCustomBehavioralEvent', {
-      name: 'calculateur_roi_utilise',
-      properties: { trafic: trafic, gain_mensuel: gainMensuel, roi_12mois: roiAn1 }
-    }]);
-  }
-
-  // Transfert Formulaire
+  // Transfert Données (Hidden Inputs)
   const donnees = {
     'trafic_visiteurs_mensuel': trafic,
     'gain_mensuel_estime': Math.round(gainMensuel),
-    'roi_previsionnel_12_mois': Math.round(roiAn1),
+    'roi_previsionnel_12_mois': (roiAn1 > 9999) ? 9999 : Math.round(roiAn1),
     'budget_investissement_estime': investissement
   };
-
   for (const [key, val] of Object.entries(donnees)) {
     const input = document.querySelector(`input[name="${key}"]`);
-    if (input) {
-      input.value = val;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+    if(input) { input.value = val; input.dispatchEvent(new Event('change')); }
   }
 }
 
-// === FONCTION DE GESTION DU GRAPHIQUE ===
+// === GRAPHIQUE ===
 function updateChart(caAvantMensuel, caApresMensuel) {
-  // Vérifier si le canvas existe dans le HTML
   const canvas = document.getElementById('roiChart');
-  if (!canvas) return; // Si pas de canvas, on ne fait rien (évite les erreurs)
-
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   
-  // Calculs : On projette le CA cumulé sur 3 ans
   const caAvantAn = caAvantMensuel * 12;
   const caApresAn = caApresMensuel * 12;
-
-  // Données [Départ, An1, An2, An3]
-  // On commence à 0 pour que les courbes partent du même point
   const dataSans = [0, caAvantAn, caAvantAn * 2, caAvantAn * 3];
   const dataAvec = [0, caApresAn, caApresAn * 2, caApresAn * 3];
 
-  // Si un graphique existe déjà, on le détruit proprement
-  if (roiChartInstance) {
-    roiChartInstance.destroy();
-  }
+  if (roiChartInstance) roiChartInstance.destroy();
 
-  // Création du nouveau graphique
   roiChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -185,70 +202,26 @@ function updateChart(caAvantMensuel, caApresMensuel) {
         {
           label: 'Situation Actuelle (Cumulée)',
           data: dataSans,
-          borderColor: '#999999', // Gris
-          backgroundColor: 'rgba(0,0,0,0)', // Pas de fond
-          borderWidth: 2,
-          pointRadius: 3,
-          tension: 0, // Ligne droite
-          borderDash: [5, 5] // Pointillés pour montrer que c'est le "passé/stagnant"
+          borderColor: '#999', borderWidth: 2, borderDash: [5,5], pointRadius: 3
         },
         {
-          label: 'Avec Écran AKAIRO (Cumulée)',
+          label: 'Avec Écran AKAIRO',
           data: dataAvec,
-          borderColor: '#DE0B19', // Rouge Akairo
-          backgroundColor: 'rgba(222, 11, 25, 0.1)', // Zone de profit rouge pâle
-          borderWidth: 3,
-          pointRadius: 5,
-          pointBackgroundColor: '#FFF',
-          pointBorderColor: '#DE0B19',
-          pointBorderWidth: 2,
-          tension: 0.3, // Légèrement courbé
-          fill: '-1' // Remplit l'espace entre cette courbe et la précédente (Zone de profit)
+          borderColor: '#DE0B19', backgroundColor: 'rgba(222, 11, 25, 0.1)',
+          borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#FFF', pointBorderColor: '#DE0B19',
+          fill: '-1', tension: 0.3
         }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { usePointStyle: true, boxWidth: 8, padding: 20 }
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: function(context) {
-              let label = context.dataset.label || '';
-              if (label) { label = label.replace(' (Cumulée)', ''); label += ': '; }
-              if (context.parsed.y !== null) {
-                label += new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(context.parsed.y);
-              }
-              return label;
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#f0f0f0' },
-          ticks: {
-            callback: function(value) {
-              return value >= 1000 ? (value/1000) + ' k€' : value + ' €';
-            }
-          }
-        },
-        x: {
-          grid: { display: false }
-        }
-      }
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index', intersect: false } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v >= 1000 ? (v/1000) + ' k€' : v + ' €' } } }
     }
   });
 }
 
-// === FONCTIONS UTILITAIRES ===
-function formatEuro(value) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value); }
-function formatNumber(value) { return new Intl.NumberFormat('fr-FR').format(value); }
-function formatPourcent(value) { return (value >= 0 ? '+' : '') + value.toFixed(0) + '%'; }
+// Utilitaires
+function formatEuro(v) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v); }
+function formatNumber(v) { return new Intl.NumberFormat('fr-FR').format(v); }
+function formatPourcent(v) { return (v >= 0 ? '+' : '') + v.toFixed(0) + '%'; }
