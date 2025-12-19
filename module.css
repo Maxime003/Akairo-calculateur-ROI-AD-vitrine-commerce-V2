@@ -377,3 +377,81 @@
     padding: 20px;
   }
 }
+/* === DESIGN LIGNE INTELLIGENTE (Trafic + Hypothèse) === */
+
+.input-group-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start; /* Aligne le haut des boîtes */
+  margin-bottom: 24px;
+}
+
+/* La colonne Trafic prend l'espace disponible */
+.main-input {
+  flex: 1; 
+  margin-bottom: 0 !important; /* On annule la marge par défaut du form-group */
+}
+
+/* La colonne Simulation est plus petite et compacte */
+.secondary-input {
+  width: 140px; /* Largeur fixe suffisante pour 2-3 chiffres */
+  flex-shrink: 0;
+  margin-bottom: 0 !important;
+}
+
+/* Style du label "Simulation" */
+.label-simulation {
+  color: #666 !important;
+  font-size: 14px !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-sim {
+  font-size: 12px;
+  filter: grayscale(1); /* L'éclair en gris pour rester sobre */
+}
+
+/* Wrapper pour mettre le % à l'intérieur du champ */
+.input-suffix-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-suffix-wrapper input {
+  padding-right: 30px !important; /* Place pour le % */
+  text-align: center;
+  font-weight: 600;
+  color: #DE0B19; /* Le chiffre en rouge pour montrer que c'est une variable */
+  border: 1px dashed #BBB !important; /* Bordure pointillée pour dire "c'est une simulation" */
+}
+
+.input-suffix-wrapper input:focus {
+  border: 1px solid #DE0B19 !important; /* Devient solide au focus */
+  background: #FFF;
+}
+
+.suffix {
+  position: absolute;
+  right: 12px;
+  color: #999;
+  font-weight: 600;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* MOBILE : On empile si l'écran est petit */
+@media (max-width: 500px) {
+  .input-group-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .secondary-input {
+    width: 100%;
+  }
+  .input-suffix-wrapper input {
+    text-align: left;
+  }
+}
