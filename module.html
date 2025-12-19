@@ -1,17 +1,20 @@
-<!-- Module HTML pour HubSpot : Calculateur ROI Affichage Dynamique AKAIRO -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <div class="akairo-calculator-wrapper">
   <div class="calculator-header">
-    <h2>Calculez le ROI de votre écran vitrine</h2>
-    <p class="subtitle">Découvrez l'impact mesurable d'un écran d'affichage dynamique sur votre activité</p>
+    <span class="badge-pro">MODE COMMERCE</span>
+    <h2>Simulateur de Rentabilité & ROI</h2>
+    <p class="subtitle">Outil d'aide à la vente - Usage interne uniquement</p>
   </div>
 
   <div class="calculator-form">
+    
+    <h4 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">1. Données du point de vente</h4>
+    
     <div class="input-group-row">
-      
       <div class="form-group main-input">
         <label for="trafic">Trafic mensuel actuel</label>
-        <input type="number" id="trafic" name="trafic" value="120" placeholder="Ex: 1000" min="0">
+        <input type="number" id="trafic" name="trafic" value="1000" placeholder="Ex: 1000" min="0">
         <span class="helper-text">Visiteurs par mois</span>
       </div>
 
@@ -25,82 +28,92 @@
         </div>
         <span class="helper-text">Hausse estimée</span>
       </div>
-
     </div>
 
     <div class="form-group">
-      <label for="ventes">Nombre de ventes mensuelles actuelles</label>
-      <input type="number" id="ventes" name="ventes" value="120" placeholder="Ex: 100" min="0">
-      <span class="helper-text">Nombre de transactions réalisées par mois</span>
+      <label for="ventes">Nombre de ventes mensuelles</label>
+      <input type="number" id="ventes" name="ventes" value="100" placeholder="Ex: 100">
     </div>
 
     <div class="form-group">
-      <label for="panier">Panier/ticket moyen actuel (€)</label>
-      <input type="number" id="panier" name="panier" value="60" placeholder="Ex: 50" min="0" step="0.01">
-      <span class="helper-text">Montant moyen dépensé par client</span>
+      <label for="panier">Panier moyen actuel (€)</label>
+      <input type="number" id="panier" name="panier" value="50" placeholder="Ex: 50">
     </div>
 
-    <div class="form-group">
-      <label for="investissement">Investissement initial estimé (€)</label>
-      <input type="number" id="investissement" value="3500" name="investissement" placeholder="Ex: 3500" min="0">
-      <span class="helper-text">Écran + support + installation + plateforme IDPLAY</span>
+    <hr style="margin: 32px 0; border: 0; border-top: 1px solid #e0e0e0;">
+
+    <div class="finance-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <h4 style="margin: 0; font-size: 18px; color: #333;">2. Offre & Financement</h4>
+      
+      <div class="toggle-container">
+        <input type="radio" id="mode_achat" name="financement" value="achat" checked onchange="toggleFinancement()">
+        <label for="mode_achat">Achat Comptant</label>
+        
+        <input type="radio" id="mode_location" name="financement" value="location" onchange="toggleFinancement()">
+        <label for="mode_location">Location RSE</label>
+        
+        <div class="toggle-slider"></div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="couts_mensuels">Coûts mensuels récurrents (€)</label>
-      <input type="number" id="couts_mensuels" value="120" name="couts_mensuels" placeholder="Ex: 100" min="0">
-      <span class="helper-text">Abonnement IDPLAY + maintenance + électricité</span>
+    <div class="finance-inputs">
+      <div class="form-group">
+        <label id="label_invest" for="investissement">Investissement initial (€)</label>
+        <input type="number" id="investissement" name="investissement" value="3500">
+        <span id="helper_invest" class="helper-text">Matériel + Installation + Logiciel</span>
+      </div>
+
+      <div class="input-group-row">
+        <div class="form-group main-input" id="group_loyer" style="display: none;">
+          <label for="loyer_mensuel" style="color: #DE0B19;">Loyer Mensuel RSE (€)</label>
+          <input type="number" id="loyer_mensuel" value="145" style="border-color: #DE0B19;">
+          <span class="helper-text">Matériel + Services inclus</span>
+        </div>
+
+        <div class="form-group main-input">
+          <label id="label_couts" for="couts_mensuels">Coûts mensuels récurrents (€)</label>
+          <input type="number" id="couts_mensuels" name="couts_mensuels" value="100">
+          <span id="helper_couts" class="helper-text">Abonnement IDPLAY + Maintenance</span>
+        </div>
+      </div>
     </div>
 
-    <button type="button" class="btn-calculate">Calculer mon ROI</button>
-
+    <button type="button" class="btn-calculate">Générer l'analyse financière</button>
   </div>
 
   <div class="calculator-results" id="results" style="display: none;">
     <div class="results-header">
-      <h3>Vos résultats</h3>
+      <h3>Analyse de Performance</h3>
     </div>
 
     <div class="results-grid">
       <div class="result-card situation-avant">
-        <h4>Sans écran vitrine</h4>
-        <div class="metric">
-          <span class="metric-label">Trafic mensuel</span>
-          <span class="metric-value" id="trafic_avant">-</span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Ventes mensuelles</span>
-          <span class="metric-value" id="ventes_avant">-</span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Panier moyen</span>
-          <span class="metric-value" id="panier_avant">-</span>
-        </div>
-        <div class="metric highlight">
-          <span class="metric-label">CA mensuel</span>
-          <span class="metric-value" id="ca_avant">-</span>
-        </div>
+        <h4>Actuellement</h4>
+        <div class="metric"><span class="metric-label">Trafic</span><span class="metric-value" id="trafic_avant">-</span></div>
+        <div class="metric"><span class="metric-label">Ventes</span><span class="metric-value" id="ventes_avant">-</span></div>
+        <div class="metric"><span class="metric-label">Panier</span><span class="metric-value" id="panier_avant">-</span></div>
+        <div class="metric highlight"><span class="metric-label">CA Mensuel</span><span class="metric-value" id="ca_avant">-</span></div>
       </div>
 
       <div class="result-card situation-apres">
-        <h4>Avec écran vitrine AKAIRO</h4>
+        <h4>Projection AKAIRO</h4>
         <div class="metric">
-          <span class="metric-label">Trafic mensuel</span>
+          <span class="metric-label">Trafic</span>
           <span class="metric-badge" id="badge_trafic">+33%</span>
           <span class="metric-value positive" id="trafic_apres">-</span>
         </div>
         <div class="metric">
-          <span class="metric-label">Ventes mensuelles</span>
+          <span class="metric-label">Ventes</span>
           <span class="metric-badge" id="badge_ventes">+33%</span>
           <span class="metric-value positive" id="ventes_apres">-</span>
         </div>
         <div class="metric">
-          <span class="metric-label">Panier moyen</span>
+          <span class="metric-label">Panier</span>
           <span class="metric-badge">+29,5%</span>
           <span class="metric-value positive" id="panier_apres">-</span>
         </div>
         <div class="metric highlight">
-          <span class="metric-label">CA mensuel</span>
+          <span class="metric-label">CA Mensuel</span>
           <span class="metric-badge" id="badge_ca">+72,2%</span>
           <span class="metric-value positive" id="ca_apres">-</span>
         </div>
@@ -108,59 +121,57 @@
     </div>
 
     <div class="gain-mensuel">
-      <div class="gain-label">Gain mensuel</div>
+      <div class="gain-label">Gain mensuel de chiffre d'affaires</div>
       <div class="gain-value" id="gain_mensuel">-</div>
       <div class="gain-annuel">Soit <strong id="gain_annuel">-</strong> de CA additionnel par an</div>
     </div>
 
-    <div class="chart-section" style="background: #FFF; padding: 24px; border-radius: 8px; border: 1px solid #E0E0E0; margin-top: 32px; margin-bottom: 24px;">
-      <h4 style="text-align: center; margin-bottom: 20px; font-size: 18px;">Projection du Chiffre d'Affaires Cumulé (3 ans)</h4>
-      <div style="position: relative; height: 300px; width: 100%;">
-        <canvas id="roiChart"></canvas>
-      </div>
+    <div class="treso-section">
+      <div class="treso-label">Trésorerie Nette Mensuelle</div>
+      <div class="treso-value" id="tresorerie_nette">-</div>
+      <div class="treso-sub">Cash-flow généré une fois l'écran et les services payés.</div>
     </div>
-    
+
     <div class="roi-section">
       <h4>Performance financière (Année 1)</h4>
       <div class="roi-grid">
-        
         <div class="roi-card">
           <span class="roi-label">Investissement</span>
           <span class="roi-value" style="color: #1A1A1A;" id="res_invest">-</span>
         </div>
-
         <div class="roi-card">
           <span class="roi-label">Chiffre d'Affaires</span>
           <span class="roi-value" id="res_ca_1an">-</span>
         </div>
-
-        <div class="roi-card highlight-card"> <span class="roi-label">Bénéfice Net</span>
+        <div class="roi-card highlight-card">
+          <span class="roi-label">Bénéfice Net</span>
           <span class="roi-value" id="res_benefice">-</span>
         </div>
-
         <div class="roi-card">
           <span class="roi-label">ROI</span>
           <span class="roi-value" id="res_roi">-</span>
         </div>
-
       </div>
-      <div class="inaction-section">
+    </div>
+
+    <div class="chart-section" style="background: #FFF; padding: 24px; border-radius: 8px; border: 1px solid #E0E0E0; margin-bottom: 24px;">
+      <h4 style="text-align: center; margin-bottom: 20px; color: #333; font-size: 16px;">Zone de Profit (Projection Cumulée sur 3 ans)</h4>
+      <div style="position: relative; height: 300px; width: 100%;">
+        <canvas id="roiChart"></canvas>
+      </div>
+    </div>
+
+    <div class="inaction-section">
       <div class="inaction-text">
         <h4>Le coût de l'attente</h4>
         <p>Si vous attendez <strong>6 mois</strong> avant de vous équiper, vous passez à côté de <span id="cout_inaction" class="inaction-amount">-</span> de chiffre d'affaires potentiel.</p>
       </div>
     </div>
-      </div>
 
-    <div class="benefits-section">
-      <h4>Bénéfices additionnels</h4>
-      <ul class="benefits-list">
-        <li>✓ Baisse du temps d'attente perçu (-35%)</li>
-        <li>✓ Amélioration de la fidélisation client (+30%)</li>
-        <li>✓ Augmentation de la récurrence d'achat</li>
-        <li>✓ Amélioration de la satisfaction client (+46%)</li>
-      </ul>
-    </div>
-    
   </div>
+  
+  <input type="hidden" name="trafic_visiteurs_mensuel">
+  <input type="hidden" name="gain_mensuel_estime">
+  <input type="hidden" name="roi_previsionnel_12_mois">
+  <input type="hidden" name="budget_investissement_estime">
 </div>
