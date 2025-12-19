@@ -1,4 +1,5 @@
 <!-- Module HTML pour HubSpot : Calculateur ROI Affichage Dynamique AKAIRO -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="akairo-calculator-wrapper">
   <div class="calculator-header">
     <h2>Calculez le ROI de votre écran vitrine</h2>
@@ -112,6 +113,13 @@
       <div class="gain-annuel">Soit <strong id="gain_annuel">-</strong> de CA additionnel par an</div>
     </div>
 
+    <div class="chart-section" style="background: #FFF; padding: 24px; border-radius: 8px; border: 1px solid #E0E0E0; margin-top: 32px; margin-bottom: 24px;">
+      <h4 style="text-align: center; margin-bottom: 20px; font-size: 18px;">Projection du Chiffre d'Affaires Cumulé (3 ans)</h4>
+      <div style="position: relative; height: 300px; width: 100%;">
+        <canvas id="roiChart"></canvas>
+      </div>
+    </div>
+    
     <div class="roi-section">
       <h4>Performance financière (Année 1)</h4>
       <div class="roi-grid">
